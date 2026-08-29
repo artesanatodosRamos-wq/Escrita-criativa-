@@ -149,13 +149,22 @@ function updateWordCount() {
 async function createChapter() {
   const id = 'ch_' + Date.now();
   activeId = id;
-  await setDoc(doc(chaptersCollection(), id), {
-    titulo: 'Novo capítulo',
-    conteudo: '',
-    atualizadoEm: serverTimestamp()
-  });
-  titleInput.focus();
-  titleInput.select();
+  try {
+    await setDoc(doc(chaptersCollection(), id), {
+      titulo: 'Novo capítulo',
+      conteudo: '',
+      atualizadoEm: serverTimestamp()
+    });
+    titleInput.focus();
+    titleInput.select();
+  } catch (err) {
+    activeId = null;
+    if (err.code === 'permission-denied') {
+      alert('Não foi possível salvar: este e-mail ainda não está liberado no banco de dados (coleção "permitidos").');
+    } else {
+      alert('Não foi possível criar o capítulo: ' + err.message);
+    }
+  }
 }
 
 newChapterBtn.addEventListener('click', createChapter);
@@ -164,12 +173,19 @@ async function salvarAgora() {
   clearTimeout(saveTimeout);
   if (!activeId || !currentUser) return;
   saveIndicatorEl.textContent = 'Salvando...';
-  await setDoc(doc(chaptersCollection(), activeId), {
-    titulo: titleInput.value,
-    conteudo: editorEl.innerHTML,
-    atualizadoEm: serverTimestamp()
-  }, { merge: true });
-  saveIndicatorEl.textContent = 'Salvo automaticamente';
+  try {
+    await setDoc(doc(chaptersCollection(), activeId), {
+      titulo: titleInput.value,
+      conteudo: editorEl.innerHTML,
+      atualizadoEm: serverTimestamp()
+    }, { merge: true });
+    saveIndicatorEl.textContent = 'Salvo automaticamente';
+  } catch (err) {
+    saveIndicatorEl.textContent = 'Erro ao salvar!';
+    if (err.code === 'permission-denied') {
+      alert('Não foi possível salvar: este e-mail ainda não está liberado no banco de dados (coleção "permitidos").');
+    }
+  }
 }
 
 let saveTimeout = null;
