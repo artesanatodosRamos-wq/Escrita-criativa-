@@ -1,4 +1,4 @@
-import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js';
+import { auth, db, provider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from './firebase-init.js';
 import {
   collection, doc, setDoc, onSnapshot, serverTimestamp, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -16,15 +16,23 @@ let unsubscribeChapters = null;
 
 // ---------- Login / Logout ----------
 function doLogin() {
-  signInWithPopup(auth, provider).catch(err => {
-    alert('Não foi possível entrar: ' + err.message);
-  });
+  signInWithRedirect(auth, provider);
 }
+getRedirectResult(auth).catch(err => {
+  alert('Não foi possível entrar: ' + err.message);
+});
 loginBtn.addEventListener('click', doLogin);
 loginBtn2.addEventListener('click', doLogin);
 logoutBtn.addEventListener('click', () => signOut(auth));
 
+const EMAIL_AUTORIZADO = 'artesanatodosramos@hotmail.com';
+
 onAuthStateChanged(auth, (user) => {
+  if (user && user.email && user.email.toLowerCase() !== EMAIL_AUTORIZADO) {
+    signOut(auth);
+    alert('Este e-mail não tem acesso a esta biblioteca.');
+    return;
+  }
   currentUser = user;
   if (user) {
     loginGate.hidden = true;
