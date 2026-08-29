@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kurogane — Biblioteca de Escrita</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <button class="project-switcher" id="project-switcher">
+    <span class="project-dot"></span>
+    <span class="project-name">Kurogane</span>
+    <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="topbar-status" id="topbar-status"></div>
+  <button id="login-btn" class="login-btn" hidden>Entrar com Google</button>
+  <button id="logout-btn" class="login-btn" hidden>Sair</button>
+</header>
+
+<div id="login-gate" class="login-gate" hidden>
+  <div class="login-card">
+    <p class="login-brand">Kurogane</p>
+    <p class="login-sub">Entre com sua conta Google para acessar sua biblioteca.</p>
+    <button id="login-btn-2" class="login-btn-big">Entrar com Google</button>
+  </div>
+</div>
+
+<div class="app-shell" id="app-shell" data-sidebar-pos="left" hidden>
+
+  <nav class="icon-bar" id="icon-bar">
+    <button class="icon-btn" data-tooltip="Buscar" data-section="busca">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    </button>
+    <div class="icon-sep"></div>
+    <button class="icon-btn active" data-tooltip="Escritos" data-section="escritos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>
+    </button>
+    <button class="icon-btn" data-tooltip="Personagens" data-section="personagens">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+    </button>
+    <button class="icon-btn" data-tooltip="Cenários" data-section="cenarios">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+    </button>
+    <button class="icon-btn" data-tooltip="Mundo" data-section="mundo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg>
+    </button>
+    <div class="icon-sep"></div>
+    <button class="icon-btn" data-tooltip="Reposicionar barra" id="reposition-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    </button>
+  </nav>
+
+  <main class="content" id="content">
+
+    <section class="view" id="view-escritos" data-view>
+      <div class="escritos-layout">
+        <aside class="chapter-list">
+          <div class="chapter-list-head">
+            <span>Capítulos</span>
+            <button id="new-chapter-btn" title="Novo capítulo">+</button>
+          </div>
+          <div id="chapter-items"></div>
+        </aside>
+        <div class="editor-pane">
+          <div class="editor-toolbar">
+            <button data-cmd="formatBlock" data-val="H1" title="Título">H1</button>
+            <button data-cmd="formatBlock" data-val="H2" title="Subtítulo">H2</button>
+            <button data-cmd="bold" title="Negrito"><b>N</b></button>
+            <button data-cmd="italic" title="Itálico"><i>I</i></button>
+            <button data-cmd="insertUnorderedList" title="Lista">•—</button>
+          </div>
+          <input type="text" id="chapter-title" class="chapter-title-input" placeholder="Título do capítulo" spellcheck="true" lang="pt-BR">
+          <div id="editor" class="editor" contenteditable="true" spellcheck="true" lang="pt-BR" data-placeholder="Comece a escrever..."></div>
+          <div class="editor-footer">
+            <span id="save-indicator">Salvo automaticamente</span>
+            <span id="word-count">0 palavras</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-personagens" data-view hidden>
+      <div class="stub-view">
+        <h2>Personagens</h2>
+        <p>Aqui vão as fichas em canvas livre — blocos de texto e imagem arrastáveis, com o vínculo por clique direito. Chega na próxima etapa.</p>
+      </div>
+    </section>
+
+    <section class="view" id="view-cenarios" data-view hidden>
+      <div class="stub-view">
+        <h2>Cenários</h2>
+        <p>Aqui vai a árvore de locais (guarda-chuva + locais internos) com imagem e texto. Chega na próxima etapa.</p>
+      </div>
+    </section>
+
+    <section class="view" id="view-mundo" data-view hidden>
+      <div class="stub-view">
+        <h2>Mundo</h2>
+        <p>Aqui vão Facções, Linha do tempo e Conceitos gerais. Chega na próxima etapa.</p>
+      </div>
+    </section>
+
+    <section class="view" id="view-busca" data-view hidden>
+      <div class="stub-view">
+        <h2>Busca global</h2>
+        <p>A busca vai cruzar personagens, cenários e mundo assim que essas seções existirem.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script type="module" src="firebase-init.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
