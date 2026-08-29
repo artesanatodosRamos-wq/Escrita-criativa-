@@ -106,8 +106,7 @@ function startChaptersListener() {
     }
   }, (err) => {
     if (err.code === 'permission-denied') {
-      alert('Este e-mail não tem acesso a esta biblioteca.');
-      signOut(auth);
+      saveIndicatorEl.textContent = 'Sem permissão de acesso';
     }
   });
 }
