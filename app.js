@@ -25,14 +25,7 @@ loginBtn.addEventListener('click', doLogin);
 loginBtn2.addEventListener('click', doLogin);
 logoutBtn.addEventListener('click', () => signOut(auth));
 
-const EMAIL_AUTORIZADO = 'artesanatodosramos@hotmail.com';
-
 onAuthStateChanged(auth, (user) => {
-  if (user && user.email && user.email.toLowerCase() !== EMAIL_AUTORIZADO) {
-    signOut(auth);
-    alert('Este e-mail não tem acesso a esta biblioteca.');
-    return;
-  }
   currentUser = user;
   if (user) {
     loginGate.hidden = true;
@@ -102,9 +95,19 @@ function startChaptersListener() {
     if (!activeId && chapters.length) activeId = chapters[0].id;
     if (!chapters.length) {
       createChapter();
-    } else {
-      renderChapterList();
+      return;
+    }
+    renderChapterList();
+    // Só recarrega o texto do editor se ele não estiver em uso agora —
+    // evita que o cursor volte pro início enquanto você digita.
+    const estaEditando = document.activeElement === editorEl || document.activeElement === titleInput;
+    if (!estaEditando) {
       renderEditor();
+    }
+  }, (err) => {
+    if (err.code === 'permission-denied') {
+      alert('Este e-mail não tem acesso a esta biblioteca.');
+      signOut(auth);
     }
   });
 }
@@ -157,20 +160,26 @@ async function createChapter() {
 
 newChapterBtn.addEventListener('click', createChapter);
 
+async function salvarAgora() {
+  clearTimeout(saveTimeout);
+  if (!activeId || !currentUser) return;
+  saveIndicatorEl.textContent = 'Salvando...';
+  await setDoc(doc(chaptersCollection(), activeId), {
+    titulo: titleInput.value,
+    conteudo: editorEl.innerHTML,
+    atualizadoEm: serverTimestamp()
+  }, { merge: true });
+  saveIndicatorEl.textContent = 'Salvo automaticamente';
+}
+
 let saveTimeout = null;
 function scheduleSave() {
   saveIndicatorEl.textContent = 'Salvando...';
   clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(async () => {
-    if (!activeId || !currentUser) return;
-    await setDoc(doc(chaptersCollection(), activeId), {
-      titulo: titleInput.value,
-      conteudo: editorEl.innerHTML,
-      atualizadoEm: serverTimestamp()
-    }, { merge: true });
-    saveIndicatorEl.textContent = 'Salvo automaticamente';
-  }, 700);
+  saveTimeout = setTimeout(salvarAgora, 700);
 }
+
+document.getElementById('save-now-btn').addEventListener('click', salvarAgora);
 
 titleInput.addEventListener('input', scheduleSave);
 editorEl.addEventListener('input', () => {
