@@ -1,4 +1,4 @@
-import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=11';
+import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=12';
 import {
   collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -651,12 +651,18 @@ function abrirMenuLink(e, textEl, bloco) {
   e.preventDefault();
   linkAlvoRange = selecao.getRangeAt(0).cloneRange();
   linkAlvoEl = textEl;
-  linkAlvoEl._blocoRef = bloco;
-  linkMenuEl.style.left = e.clientX + 'px';
-  linkMenuEl.style.top = e.clientY + 'px';
+  linkAlvoEl._blocoRef = bloco || null;
+  const x = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || 0;
+  const y = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY) || 0;
+  linkMenuEl.style.left = x + 'px';
+  linkMenuEl.style.top = y + 'px';
   linkMenuEl.hidden = false;
   linkBuscaBoxEl.hidden = true;
 }
+
+// Também disponível na área de Escritos: selecionar um texto e clicar com o
+// botão direito (ou tocar e segurar no celular) abre o mesmo menu de vínculo.
+editorEl.addEventListener('contextmenu', (e) => abrirMenuLink(e, editorEl, null));
 
 linkMenuEl.querySelectorAll('.link-menu-item').forEach(item => {
   item.addEventListener('click', () => {
@@ -714,6 +720,9 @@ function aplicarLink(itemAlvo) {
   if (bloco) {
     bloco.conteudo = linkAlvoEl.innerHTML;
     schedulePersonagemSave();
+  } else if (linkAlvoEl === editorEl) {
+    updateWordCount();
+    scheduleSave();
   }
   linkBuscaBoxEl.hidden = true;
 }
@@ -725,12 +734,25 @@ document.addEventListener('click', (e) => {
   if (!linkBuscaBoxEl.contains(e.target) && e.target !== linkBuscaInputEl) linkBuscaBoxEl.hidden = true;
 });
 
+function irParaPersonagemLinkado(id) {
+  activePersonagemId = id;
+  const btn = document.querySelector('.icon-btn[data-section="personagens"]');
+  if (btn) btn.click();
+  renderPersonagemList();
+  renderCanvas();
+}
+
 // Clicar num texto já linkado abre o personagem correspondente
 canvasAreaEl.addEventListener('click', (e) => {
   const span = e.target.closest('.texto-linkado');
   if (span && span.dataset.linkTipo === 'personagem') {
-    activePersonagemId = span.dataset.linkId;
-    renderPersonagemList();
-    renderCanvas();
+    irParaPersonagemLinkado(span.dataset.linkId);
+  }
+});
+
+editorEl.addEventListener('click', (e) => {
+  const span = e.target.closest('.texto-linkado');
+  if (span && span.dataset.linkTipo === 'personagem') {
+    irParaPersonagemLinkado(span.dataset.linkId);
   }
 });
