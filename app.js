@@ -1,4 +1,4 @@
-import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=7';
+import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=9';
 import {
   collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -280,8 +280,16 @@ function renderCanvas() {
 function criarElementoBloco(bloco) {
   const el = document.createElement('div');
   el.className = 'canvas-block';
-  el.style.left = (bloco.x || 20) + 'px';
-  el.style.top = (bloco.y || 20) + 'px';
+  const areaW = canvasAreaEl.clientWidth || 600;
+  const areaH = canvasAreaEl.clientHeight || 420;
+  const larguraEstimada = bloco.w || 150;
+  const alturaEstimada = bloco.h || 110;
+  const xSeguro = Math.min(Math.max(0, bloco.x || 20), Math.max(0, areaW - larguraEstimada));
+  const ySeguro = Math.min(Math.max(0, bloco.y || 20), Math.max(0, areaH - alturaEstimada));
+  bloco.x = xSeguro;
+  bloco.y = ySeguro;
+  el.style.left = xSeguro + 'px';
+  el.style.top = ySeguro + 'px';
   if (bloco.w) el.style.width = bloco.w + 'px';
   if (bloco.h) el.style.height = bloco.h + 'px';
   el.dataset.id = bloco.id;
@@ -292,6 +300,23 @@ function criarElementoBloco(bloco) {
 
   const actions = document.createElement('div');
   actions.className = 'canvas-block-handle-actions';
+
+  const maisBtn = document.createElement('button');
+  maisBtn.className = 'canvas-block-layer-btn';
+  maisBtn.textContent = '+';
+  maisBtn.title = 'Aumentar';
+  maisBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  maisBtn.addEventListener('click', (e) => { e.stopPropagation(); ajustarTamanho(bloco.id, 24); });
+
+  const menosBtn = document.createElement('button');
+  menosBtn.className = 'canvas-block-layer-btn';
+  menosBtn.textContent = '−';
+  menosBtn.title = 'Diminuir';
+  menosBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  menosBtn.addEventListener('click', (e) => { e.stopPropagation(); ajustarTamanho(bloco.id, -24); });
+
+  actions.appendChild(maisBtn);
+  actions.appendChild(menosBtn);
 
   const frenteBtn = document.createElement('button');
   frenteBtn.className = 'canvas-block-layer-btn';
@@ -329,6 +354,7 @@ function criarElementoBloco(bloco) {
     if (bloco.conteudo) {
       const img = document.createElement('img');
       img.src = bloco.conteudo;
+      img.draggable = false;
       imgWrap.appendChild(img);
     } else {
       imgWrap.textContent = 'Toque para escolher imagem';
@@ -384,6 +410,20 @@ function tornarRedimensionavel(el, bloco) {
   });
 }
 
+function ajustarTamanho(blocoId, delta) {
+  const p = personagemAtiva();
+  if (!p) return;
+  const bloco = (p.blocos || []).find(b => b.id === blocoId);
+  if (!bloco) return;
+  const elAtual = canvasAreaEl.querySelector('[data-id="' + blocoId + '"]');
+  const larguraAtual = bloco.w || (elAtual ? elAtual.offsetWidth : 150);
+  const alturaAtual = bloco.h || (elAtual ? elAtual.offsetHeight : 110);
+  bloco.w = Math.max(90, larguraAtual + delta);
+  bloco.h = Math.max(60, alturaAtual + Math.round(delta * 0.7));
+  renderCanvas();
+  schedulePersonagemSave();
+}
+
 function moverCamada(blocoId, direcao) {
   const p = personagemAtiva();
   if (!p || !p.blocos) return;
@@ -411,8 +451,12 @@ function tornarArrastavel(el, bloco) {
   });
   handle.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    const novoX = e.clientX - offX;
-    const novoY = e.clientY - offY;
+    const larguraBloco = el.offsetWidth;
+    const alturaBloco = el.offsetHeight;
+    const maxX = Math.max(0, canvasAreaEl.clientWidth - larguraBloco);
+    const maxY = Math.max(0, canvasAreaEl.clientHeight - alturaBloco);
+    const novoX = Math.min(maxX, Math.max(0, e.clientX - offX));
+    const novoY = Math.min(maxY, Math.max(0, e.clientY - offY));
     el.style.left = novoX + 'px';
     el.style.top = novoY + 'px';
     bloco.x = novoX;
