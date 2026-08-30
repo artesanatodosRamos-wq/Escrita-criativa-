@@ -1,4 +1,4 @@
-import { auth, db, provider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from './firebase-init.js?v=3';
+import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=4';
 import {
   collection, doc, setDoc, onSnapshot, serverTimestamp, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -15,11 +15,10 @@ let unsubscribeChapters = null;
 
 // ---------- Login / Logout ----------
 function doLogin() {
-  signInWithRedirect(auth, provider);
+  signInWithPopup(auth, provider).catch(err => {
+    alert('Não foi possível entrar.\nMotivo: ' + err.code + '\n' + err.message);
+  });
 }
-getRedirectResult(auth).catch(err => {
-  alert('Não foi possível entrar: ' + err.message);
-});
 loginBtn2.addEventListener('click', doLogin);
 logoutBtn.addEventListener('click', () => signOut(auth));
 
