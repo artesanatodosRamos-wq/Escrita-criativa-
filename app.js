@@ -1,4 +1,4 @@
-import { auth, db, provider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from './firebase-init.js';
+import { auth, db, provider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from './firebase-init.js?v=3';
 import {
   collection, doc, setDoc, onSnapshot, serverTimestamp, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -6,7 +6,6 @@ import {
 // ---------- Elementos ----------
 const loginGate = document.getElementById('login-gate');
 const appShell = document.getElementById('app-shell');
-const loginBtn = document.getElementById('login-btn');
 const logoutBtn = document.getElementById('logout-btn');
 const loginBtn2 = document.getElementById('login-btn-2');
 const topbarStatus = document.getElementById('topbar-status');
@@ -21,7 +20,6 @@ function doLogin() {
 getRedirectResult(auth).catch(err => {
   alert('Não foi possível entrar: ' + err.message);
 });
-loginBtn.addEventListener('click', doLogin);
 loginBtn2.addEventListener('click', doLogin);
 logoutBtn.addEventListener('click', () => signOut(auth));
 
@@ -30,14 +28,12 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     loginGate.hidden = true;
     appShell.hidden = false;
-    loginBtn.hidden = true;
     logoutBtn.hidden = false;
-    topbarStatus.textContent = user.email || user.displayName || '';
+    topbarStatus.textContent = 'Logada como ' + (user.email || user.displayName || '');
     startChaptersListener();
   } else {
     loginGate.hidden = false;
     appShell.hidden = true;
-    loginBtn.hidden = false;
     logoutBtn.hidden = true;
     topbarStatus.textContent = '';
     if (unsubscribeChapters) unsubscribeChapters();
@@ -146,6 +142,10 @@ function updateWordCount() {
 }
 
 async function createChapter() {
+  if (!currentUser) {
+    alert('Ainda não terminou de entrar — espera um instante e tenta de novo.');
+    return;
+  }
   const id = 'ch_' + Date.now();
   activeId = id;
   try {
