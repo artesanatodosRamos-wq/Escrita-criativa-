@@ -1,4 +1,4 @@
-import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=9';
+import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=11';
 import {
   collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -13,6 +13,7 @@ const topbarStatus = document.getElementById('topbar-status');
 let currentUser = null;
 let unsubscribeChapters = null;
 let unsubscribePersonagens = null;
+let interagindoComBloco = false;
 
 // ---------- Login / Logout ----------
 function doLogin() {
@@ -235,9 +236,13 @@ function startPersonagensListener() {
   unsubscribePersonagens = onSnapshot(q, (snapshot) => {
     personagens = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderPersonagemList();
+    // Só recarrega o canvas se ele não estiver em uso agora —
+    // evita clonar blocos enquanto você arrasta ou redimensiona.
     const estaEditando = document.activeElement === personagemNomeInput ||
       (document.activeElement && document.activeElement.closest && document.activeElement.closest('.canvas-block-text'));
-    if (!estaEditando) renderCanvas();
+    if (!estaEditando && !interagindoComBloco) {
+      renderCanvas();
+    }
   }, (err) => {
     if (err.code === 'permission-denied') {
       personagemSaveStatus('Sem permissão de acesso');
@@ -390,6 +395,7 @@ function tornarRedimensionavel(el, bloco) {
   alca.addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     redimensionando = true;
+    interagindoComBloco = true;
     startX = e.clientX;
     startY = e.clientY;
     startW = el.offsetWidth;
@@ -407,6 +413,7 @@ function tornarRedimensionavel(el, bloco) {
   });
   alca.addEventListener('pointerup', () => {
     if (redimensionando) { redimensionando = false; schedulePersonagemSave(); }
+    interagindoComBloco = false;
   });
 }
 
@@ -444,6 +451,7 @@ function tornarArrastavel(el, bloco) {
   let dragging = false, offX = 0, offY = 0;
   handle.addEventListener('pointerdown', (e) => {
     dragging = true;
+    interagindoComBloco = true;
     el.classList.add('dragging');
     offX = e.clientX - el.offsetLeft;
     offY = e.clientY - el.offsetTop;
@@ -464,6 +472,7 @@ function tornarArrastavel(el, bloco) {
   });
   handle.addEventListener('pointerup', () => {
     if (dragging) { dragging = false; el.classList.remove('dragging'); schedulePersonagemSave(); }
+    interagindoComBloco = false;
   });
 }
 
@@ -510,7 +519,11 @@ function comprimirImagem(file, maxDim, qualidade) {
       canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', qualidade));
+      resolve({
+        dataUrl: canvas.toDataURL('image/jpeg', qualidade),
+        width,
+        height
+      });
     };
     img.onerror = reject;
     img.src = url;
@@ -525,15 +538,34 @@ function escolherImagem(blocoId) {
     const file = input.files[0];
     if (!file) return;
     try {
-      let dataUrl = await comprimirImagem(file, 900, 0.72);
+      let resultado = await comprimirImagem(file, 900, 0.72);
       // Se ainda ficar grande, comprime mais uma vez, menor e com mais qualidade reduzida
-      if (dataUrl.length > 900000) {
-        dataUrl = await comprimirImagem(file, 600, 0.55);
+      if (resultado.dataUrl.length > 900000) {
+        resultado = await comprimirImagem(file, 600, 0.55);
       }
       const p = personagemAtiva();
       const bloco = (p.blocos || []).find(b => b.id === blocoId);
       if (bloco) {
-        bloco.conteudo = dataUrl;
+        bloco.conteudo = resultado.dataUrl;
+
+        // Calcula um tamanho de exibição que sempre cabe na área, mantendo a proporção da foto
+        const areaW = canvasAreaEl.clientWidth || 600;
+        const areaH = canvasAreaEl.clientHeight || 420;
+        const alturaHandle = 28; // espaço ocupado pelo cabeçalho do bloco
+        const maxCaixaW = Math.min(280, areaW - 24);
+        const maxCaixaH = Math.min(280, areaH - 24 - alturaHandle);
+        const proporcao = resultado.width / resultado.height;
+        let novaW = maxCaixaW;
+        let novaH = Math.round(novaW / proporcao) + alturaHandle;
+        if (novaH > maxCaixaH + alturaHandle) {
+          novaH = maxCaixaH + alturaHandle;
+          novaW = Math.round((novaH - alturaHandle) * proporcao);
+        }
+        bloco.w = novaW;
+        bloco.h = novaH;
+        bloco.x = Math.max(0, Math.round((areaW - novaW) / 2));
+        bloco.y = Math.max(0, Math.round((areaH - novaH) / 2));
+
         renderCanvas();
         schedulePersonagemSave();
       }
