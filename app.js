@@ -1,4 +1,4 @@
-import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=6';
+import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=7';
 import {
   collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -282,11 +282,34 @@ function criarElementoBloco(bloco) {
   el.className = 'canvas-block';
   el.style.left = (bloco.x || 20) + 'px';
   el.style.top = (bloco.y || 20) + 'px';
+  if (bloco.w) el.style.width = bloco.w + 'px';
+  if (bloco.h) el.style.height = bloco.h + 'px';
   el.dataset.id = bloco.id;
 
   const handle = document.createElement('div');
   handle.className = 'canvas-block-handle';
   handle.innerHTML = '<span>' + (bloco.tipo === 'imagem' ? 'imagem' : 'texto') + '</span>';
+
+  const actions = document.createElement('div');
+  actions.className = 'canvas-block-handle-actions';
+
+  const frenteBtn = document.createElement('button');
+  frenteBtn.className = 'canvas-block-layer-btn';
+  frenteBtn.textContent = '▲';
+  frenteBtn.title = 'Trazer para frente';
+  frenteBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  frenteBtn.addEventListener('click', (e) => { e.stopPropagation(); moverCamada(bloco.id, 'frente'); });
+
+  const fundoBtn = document.createElement('button');
+  fundoBtn.className = 'canvas-block-layer-btn';
+  fundoBtn.textContent = '▼';
+  fundoBtn.title = 'Enviar para trás';
+  fundoBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  fundoBtn.addEventListener('click', (e) => { e.stopPropagation(); moverCamada(bloco.id, 'fundo'); });
+
+  actions.appendChild(frenteBtn);
+  actions.appendChild(fundoBtn);
+
   const removeBtn = document.createElement('button');
   removeBtn.className = 'canvas-block-remove';
   removeBtn.textContent = '×';
@@ -296,7 +319,8 @@ function criarElementoBloco(bloco) {
     e.stopPropagation();
     removerBloco(bloco.id);
   });
-  handle.appendChild(removeBtn);
+  actions.appendChild(removeBtn);
+  handle.appendChild(actions);
   el.appendChild(handle);
 
   if (bloco.tipo === 'imagem') {
@@ -327,7 +351,52 @@ function criarElementoBloco(bloco) {
   }
 
   tornarArrastavel(el, bloco);
+  tornarRedimensionavel(el, bloco);
   canvasAreaEl.appendChild(el);
+}
+
+function tornarRedimensionavel(el, bloco) {
+  const alca = document.createElement('div');
+  alca.className = 'canvas-resize-handle';
+  el.appendChild(alca);
+
+  let redimensionando = false, startX = 0, startY = 0, startW = 0, startH = 0;
+  alca.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    redimensionando = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    startW = el.offsetWidth;
+    startH = el.offsetHeight;
+    alca.setPointerCapture(e.pointerId);
+  });
+  alca.addEventListener('pointermove', (e) => {
+    if (!redimensionando) return;
+    const novaW = Math.max(120, startW + (e.clientX - startX));
+    const novaH = Math.max(60, startH + (e.clientY - startY));
+    el.style.width = novaW + 'px';
+    el.style.height = novaH + 'px';
+    bloco.w = novaW;
+    bloco.h = novaH;
+  });
+  alca.addEventListener('pointerup', () => {
+    if (redimensionando) { redimensionando = false; schedulePersonagemSave(); }
+  });
+}
+
+function moverCamada(blocoId, direcao) {
+  const p = personagemAtiva();
+  if (!p || !p.blocos) return;
+  const idx = p.blocos.findIndex(b => b.id === blocoId);
+  if (idx === -1) return;
+  const [bloco] = p.blocos.splice(idx, 1);
+  if (direcao === 'frente') {
+    p.blocos.push(bloco); // vai para o fim do array = renderizado por último = fica visualmente por cima
+  } else {
+    p.blocos.unshift(bloco); // vai para o início = renderizado primeiro = fica visualmente por baixo
+  }
+  renderCanvas();
+  schedulePersonagemSave();
 }
 
 function tornarArrastavel(el, bloco) {

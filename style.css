@@ -257,6 +257,8 @@ input[type="text"]{
   border-radius:8px;
   min-width:140px;
   min-height:60px;
+  display:flex;
+  flex-direction:column;
 }
 .canvas-block.dragging{border-color:var(--accent);z-index:10;}
 .canvas-block-handle{
@@ -265,21 +267,38 @@ input[type="text"]{
   display:flex;align-items:center;justify-content:space-between;
   border-bottom:0.5px solid var(--border);
   font-size:11px;color:var(--text-muted);
+  flex-shrink:0;
 }
 .canvas-block-remove{
   background:none;border:none;color:var(--text-muted);
   cursor:pointer;padding:0 4px;font-size:14px;line-height:1;
 }
 .canvas-block-remove:hover{color:var(--text-primary);}
+.canvas-block-layer-btn{
+  background:none;border:none;color:var(--text-muted);
+  cursor:pointer;padding:0 3px;font-size:11px;line-height:1;
+}
+.canvas-block-layer-btn:hover{color:var(--text-primary);}
+.canvas-block-handle-actions{display:flex;align-items:center;gap:2px;}
+.canvas-resize-handle{
+  position:absolute;right:0;bottom:0;
+  width:14px;height:14px;
+  cursor:nwse-resize;
+  background:linear-gradient(135deg, transparent 50%, var(--border-strong) 50%);
+  border-bottom-right-radius:8px;
+}
 .canvas-block-text{
   padding:8px 10px;
   font-size:13px;line-height:1.6;
-  min-width:140px;min-height:40px;
+  flex:1;
+  width:100%;
   outline:none;
+  overflow:auto;
 }
 .canvas-block-image{
   display:flex;align-items:center;justify-content:center;
-  width:150px;height:110px;
+  flex:1;
+  width:100%;
   color:var(--text-muted);
   font-size:12px;
   cursor:pointer;
