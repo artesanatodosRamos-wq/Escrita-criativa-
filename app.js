@@ -1,4 +1,4 @@
-import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=5';
+import { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged } from './firebase-init.js?v=6';
 import {
   collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -291,7 +291,11 @@ function criarElementoBloco(bloco) {
   removeBtn.className = 'canvas-block-remove';
   removeBtn.textContent = '×';
   removeBtn.title = 'Remover bloco';
-  removeBtn.addEventListener('click', () => removerBloco(bloco.id));
+  removeBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  removeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    removerBloco(bloco.id);
+  });
   handle.appendChild(removeBtn);
   el.appendChild(handle);
 
@@ -375,28 +379,54 @@ addBlocoImagemBtn.addEventListener('click', () => {
   adicionarBloco(novoBlocoBase('imagem'));
 });
 
+function comprimirImagem(file, maxDim, qualidade) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDim) {
+        height = Math.round(height * (maxDim / width));
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round(width * (maxDim / height));
+        height = maxDim;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', qualidade));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 function escolherImagem(blocoId) {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
-  input.addEventListener('change', () => {
+  input.addEventListener('change', async () => {
     const file = input.files[0];
     if (!file) return;
-    if (file.size > 900000) {
-      alert('Imagem muito grande — escolha uma menor que 900KB por enquanto.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
+    try {
+      let dataUrl = await comprimirImagem(file, 900, 0.72);
+      // Se ainda ficar grande, comprime mais uma vez, menor e com mais qualidade reduzida
+      if (dataUrl.length > 900000) {
+        dataUrl = await comprimirImagem(file, 600, 0.55);
+      }
       const p = personagemAtiva();
       const bloco = (p.blocos || []).find(b => b.id === blocoId);
       if (bloco) {
-        bloco.conteudo = reader.result;
+        bloco.conteudo = dataUrl;
         renderCanvas();
         schedulePersonagemSave();
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      alert('Não foi possível processar essa imagem.');
+    }
   });
   input.click();
 }
