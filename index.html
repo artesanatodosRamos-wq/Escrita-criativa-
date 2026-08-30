@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kurogane — Biblioteca de Escrita</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -82,11 +82,43 @@
     </section>
 
     <section class="view" id="view-personagens" data-view hidden>
-      <div class="stub-view">
-        <h2>Personagens</h2>
-        <p>Aqui vão as fichas em canvas livre — blocos de texto e imagem arrastáveis, com o vínculo por clique direito. Chega na próxima etapa.</p>
+      <div class="personagens-layout">
+        <aside class="chapter-list">
+          <div class="chapter-list-head">
+            <span>Personagens</span>
+            <button id="new-personagem-btn" title="Novo personagem">+</button>
+          </div>
+          <div id="personagem-items"></div>
+        </aside>
+        <div class="canvas-pane">
+          <div class="canvas-toolbar">
+            <input type="text" id="personagem-nome" class="chapter-title-input" placeholder="Nome do personagem" spellcheck="true" lang="pt-BR">
+            <div class="canvas-toolbar-actions">
+              <button id="add-bloco-texto-btn" title="Adicionar bloco de texto">+ Texto</button>
+              <button id="add-bloco-imagem-btn" title="Adicionar bloco de imagem">+ Imagem</button>
+              <button id="save-personagem-btn" class="save-now-btn" title="Salvar agora">Salvar agora</button>
+            </div>
+          </div>
+          <div id="canvas-area" class="canvas-area"></div>
+          <p class="canvas-hint">Arraste os blocos para reorganizar. Selecione um texto e clique com o botão direito para linkar a um personagem ou cenário.</p>
+        </div>
       </div>
     </section>
+
+    <div id="link-menu" class="link-menu" hidden>
+      <div class="link-menu-item" data-tipo="personagem">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        Linkar a personagem
+      </div>
+      <div class="link-menu-item" data-tipo="cenario">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+        Linkar a cenário
+      </div>
+    </div>
+    <div id="link-busca-box" class="link-busca-box" hidden>
+      <input type="text" id="link-busca-input" placeholder="Digite o nome...">
+      <div id="link-sugestoes"></div>
+    </div>
 
     <section class="view" id="view-cenarios" data-view hidden>
       <div class="stub-view">
@@ -112,7 +144,7 @@
   </main>
 </div>
 
-<script type="module" src="firebase-init.js?v=4"></script>
-<script type="module" src="app.js?v=4"></script>
+<script type="module" src="firebase-init.js?v=5"></script>
+<script type="module" src="app.js?v=5"></script>
 </body>
 </html>
